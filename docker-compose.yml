@@ -26,8 +26,8 @@ services:
   # Backend API server
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: docker/Dockerfile.dev.backend
     container_name: chat-app-backend
     ports:
       - "3001:3001"
@@ -49,8 +49,8 @@ services:
   # Frontend development server
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: docker/Dockerfile.dev.frontend
     container_name: chat-app-frontend
     ports:
       - "3000:3000"
