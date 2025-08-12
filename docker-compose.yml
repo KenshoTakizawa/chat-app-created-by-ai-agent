@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # Local SQLite database (for development)
+  database:
+    image: alpine:latest
+    container_name: chat-app-db
+    volumes:
+      - ./data:/data
+      - ./scripts/init-db.sh:/init-db.sh
+    command: sh -c "mkdir -p /data && touch /data/local.db && tail -f /dev/null"
+    networks:
+      - chat-app-network
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: chat-app-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - chat-app-network
+
+  # Backend API server
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: chat-app-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_TYPE=sqlite
+      - DATABASE_PATH=/data/local.db
+      - PORT=3001
+    volumes:
+      - ./backend:/app
+      - ./data:/data
+      - /app/node_modules
+    depends_on:
+      - database
+      - redis
+    networks:
+      - chat-app-network
+
+  # Frontend development server
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: chat-app-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - chat-app-network
+
+volumes:
+  redis-data:
+
+networks:
+  chat-app-network:
+    driver: bridge
